@@ -1,5 +1,5 @@
 // =========================================================
-// === 在庫管理アプリ - 数量・パスワード設定機能追加版 ===
+// === 在庫管理アプリ - 最終整理版 ===
 // =========================================================
 
 // DOM要素の取得
@@ -8,6 +8,7 @@ const inventoryBody = document.getElementById('inventory-body');
 const searchInput = document.getElementById('search-input');
 const filterButtons = document.querySelectorAll('.filter-buttons button');
 const noItemsMessage = document.getElementById('no-items');
+const listTitle = document.getElementById('list-title'); // リストタイトル要素
 const settingsButton = document.getElementById('settings-button');
 const passwordModal = document.getElementById('password-modal');
 const closeButton = document.querySelector('.close-button');
@@ -15,10 +16,9 @@ const passwordForm = document.getElementById('password-form');
 const passwordMessage = document.getElementById('password-message');
 
 // *** 【セキュリティ設定と初期化】 ***
-// パスワードをローカルストレージから読み込む。存在しない場合は初期値 '0000' を設定。
 function getPassword() {
     const storedPassword = localStorage.getItem('editPassword');
-    // 初期PW '0000'
+    // 初期パスワードは '0000'
     if (!storedPassword) {
         localStorage.setItem('editPassword', '0000');
         return '0000';
@@ -26,6 +26,7 @@ function getPassword() {
     return storedPassword;
 }
 let currentEditPassword = getPassword();
+let currentFilter = 'uncompleted'; 
 let inventory = []; // 在庫データを格納する配列
 
 // --- データ操作とローカルストレージ ---
@@ -85,119 +86,84 @@ itemForm.addEventListener('submit', (e) => {
     document.getElementById('location').value = '';
 });
 
-// 検索・フィルタボタンの処理 (変更なし)
+// 検索入力時の処理 (変更なし)
 searchInput.addEventListener('input', () => { renderInventory(); });
+
+// フィルタボタン（タブ）の処理
 filterButtons.forEach(button => {
     button.addEventListener('click', () => {
         filterButtons.forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
 
-        if (button.id === 'filter-all') {
-            currentFilter = 'all';
-        } else if (button.id === 'filter-completed') {
+        // タブに応じてリストタイトルを更新
+        if (button.id === 'filter-completed') {
             currentFilter = 'completed';
+            listTitle.textContent = '履歴一覧';
         } else {
             currentFilter = 'uncompleted';
+            listTitle.textContent = '在庫一覧';
         }
         renderInventory();
     });
 });
 
-// リスト内のボタン（状態切り替え、削除）の処理
+// リスト内のボタン（削除）およびプルダウン（数量変更）の処理
 inventoryBody.addEventListener('click', (e) => {
     const target = e.target;
-    if (target.classList.contains('toggle-button') || target.classList.contains('delete-button')) {
-        
-        // *** 【パスワードチェック】: 編集・削除前にパスワードを求める ***
-        const inputPassword = prompt("編集時はPWが必要です。");
+    
+    // 削除ボタンの処理
+    if (target.classList.contains('delete-button')) {
+        // パスワードチェック
+        const inputPassword = prompt("パスワードが必要です。");
         if (inputPassword !== currentEditPassword) {
-            alert("wrong PW");
+            alert("パスワードが違います。");
             return;
         }
-        // ***************************************************************
-        
         const id = Number(target.closest('tr').dataset.id); 
-        
-        if (target.classList.contains('toggle-button')) {
-            toggleCompletion(id);
-        } else if (target.classList.contains('delete-button')) {
-            deleteItem(id);
+        deleteItem(id);
+    }
+});
+
+// 数量プルダウン変更時の処理
+inventoryBody.addEventListener('change', (e) => {
+    const target = e.target;
+    if (target.classList.contains('quantity-select')) {
+        // パスワードチェック
+        const inputPassword = prompt("パスワードが必要です。");
+        if (inputPassword !== currentEditPassword) {
+            alert("パスワードが違います。");
+            // 変更をキャンセルするため、元の数量に戻す
+            renderInventory(); 
+            return;
         }
+
+        const id = Number(target.closest('tr').dataset.id);
+        const newQuantity = parseInt(target.value, 10);
+        updateQuantity(id, newQuantity);
     }
 });
 
-// *** 【設定ボタンとモーダルの処理】 ***
+// --- 主要な機能 ---
 
-// 1. 設定ボタンを押したらモーダルを表示
-settingsButton.addEventListener('click', () => {
-    passwordModal.style.display = 'block';
-    passwordMessage.textContent = ''; // メッセージをクリア
-    passwordForm.reset();
-});
-
-// 2. 閉じるボタン (x) を押したらモーダルを非表示
-closeButton.addEventListener('click', () => {
-    passwordModal.style.display = 'none';
-});
-
-// 3. モーダル外をクリックしたらモーダルを非表示
-window.addEventListener('click', (event) => {
-    if (event.target === passwordModal) {
-        passwordModal.style.display = 'none';
-    }
-});
-
-// 4. パスワード変更フォームの送信処理
-passwordForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const currentPass = document.getElementById('current-password').value;
-    const newPass = document.getElementById('new-password').value;
-    const confirmPass = document.getElementById('confirm-new-password').value;
-
-    if (currentPass !== currentEditPassword) {
-        passwordMessage.textContent = 'エラー: worng PW';
-        return;
-    }
-
-    if (newPass !== confirmPass) {
-        passwordMessage.textContent = 'エラー: worng PW';
-        return;
-    }
-    
-    if (newPass.length < 4) {
-        passwordMessage.textContent = 'エラー: PWは4文字までです';
-        return;
-    }
-
-    // パスワードの更新
-    currentEditPassword = newPass;
-    localStorage.setItem('editPassword', newPass);
-    
-    passwordMessage.textContent = '変更完了';
-    passwordMessage.style.color = 'green';
-
-    // 成功後、フォームをクリアしモーダルを閉じる (UXのため数秒後に閉じる)
-    setTimeout(() => {
-        passwordModal.style.display = 'none';
-        passwordMessage.textContent = '';
-        passwordMessage.style.color = 'red';
-    }, 1500);
-});
-
-// --- 在庫リストの表示ロジック (変更なし) ---
-
-function toggleCompletion(id) {
+// 数量の更新と完了への移動ロジック
+function updateQuantity(id, newQuantity) {
     const itemIndex = inventory.findIndex(item => item.id === id);
     if (itemIndex !== -1) {
-        inventory[itemIndex].isCompleted = !inventory[itemIndex].isCompleted;
+        inventory[itemIndex].quantity = newQuantity;
+
+        if (newQuantity === 0) {
+            // 数量が0になったら完了リストへ移動
+            inventory[itemIndex].isCompleted = true;
+        }
+        
         saveInventory();
         renderInventory();
     }
 }
 
+// アイテムを削除する
 function deleteItem(id) {
-    if (!confirm('削除しますか？')) {
+    if (!confirm('削除していいですか？')) {
         return;
     }
     inventory = inventory.filter(item => item.id !== id);
@@ -205,27 +171,31 @@ function deleteItem(id) {
     renderInventory();
 }
 
+// 在庫リストを表示する (ソート、アラート、数量表示ロジックを含む)
 function renderInventory() {
     inventoryBody.innerHTML = ''; 
     const today = new Date();
     today.setHours(0, 0, 0, 0); 
 
     let filteredInventory = inventory.filter(item => {
+        // タブによるフィルタリング
         const filterMatch = 
             (currentFilter === 'uncompleted' && !item.isCompleted) ||
-            (currentFilter === 'completed' && item.isCompleted) ||
-            (currentFilter === 'all');
+            (currentFilter === 'completed' && item.isCompleted);
         
+        // 検索
         const searchText = searchInput.value.toLowerCase();
         const searchMatch = !searchText || item.name.toLowerCase().includes(searchText);
 
         return filterMatch && searchMatch;
     });
     
+    // 賞味期限によるソート（期限が近い順）
     filteredInventory.sort((a, b) => {
         const dateA = a.expiry ? new Date(a.expiry) : new Date(8640000000000000); 
         const dateB = b.expiry ? new Date(b.expiry) : new Date(8640000000000000);
 
+        // 完了アイテムは常にリストの最後尾（完了タブ内）
         if (a.isCompleted !== b.isCompleted) {
             return a.isCompleted ? 1 : -1;
         }
@@ -268,22 +238,87 @@ function renderInventory() {
             row.classList.add(alertClass);
         }
 
-        const toggleText = item.isCompleted ? '戻す' : '済';
+        // 数量表示のロジック: 未完了リストではプルダウン、完了リストでは固定表示
+        let quantityHtml;
+        if (currentFilter === 'uncompleted') {
+            let options = '';
+            // 数量0から現在の数量までのプルダウンオプションを生成
+            for (let i = 0; i <= item.quantity; i++) {
+                options += `<option value="${i}" ${i === item.quantity ? 'selected' : ''}>${i}</option>`;
+            }
+            quantityHtml = `<select class="quantity-select" data-id="${item.id}">${options}</select>`;
+        } else {
+            // 完了リストでは、数量を固定表示
+            quantityHtml = item.quantity;
+        }
 
         row.innerHTML = `
             <td>${item.name}</td>
-            <td>${item.quantity}</td> 
-            <td>${item.expiry || '-'}</td>
-            <td>${item.location || '-'}</td>
-            <td>${item.isCompleted ? '済' : '未'}</td>
+            <td>${quantityHtml}</td> 
+            <td>${item.expiry || '未設定'}</td>
+            <td>${item.location || '未設定'}</td>
+            <td>-</td>
             <td>
-                <button class="action-button toggle-button">${toggleText}</button>
                 <button class="action-button delete-button">削除</button>
             </td>
         `;
         inventoryBody.appendChild(row);
     });
 }
+
+// *** 【設定ボタンとモーダルの処理】 (変更なし) ***
+
+settingsButton.addEventListener('click', () => {
+    passwordModal.style.display = 'block';
+    passwordMessage.textContent = '';
+    passwordForm.reset();
+});
+
+closeButton.addEventListener('click', () => {
+    passwordModal.style.display = 'none';
+});
+
+window.addEventListener('click', (event) => {
+    if (event.target === passwordModal) {
+        passwordModal.style.display = 'none';
+    }
+});
+
+passwordForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const currentPass = document.getElementById('current-password').value;
+    const newPass = document.getElementById('new-password').value;
+    const confirmPass = document.getElementById('confirm-new-password').value;
+
+    if (currentPass !== currentEditPassword) {
+        passwordMessage.textContent = 'エラー: 現在のパスワードが違います。';
+        return;
+    }
+
+    if (newPass !== confirmPass) {
+        passwordMessage.textContent = 'エラー: 新しいパスワードが一致しません。';
+        return;
+    }
+    
+    if (newPass.length < 4) {
+        passwordMessage.textContent = 'エラー: パスワードは4文字にしてください。';
+        return;
+    }
+
+    currentEditPassword = newPass;
+    localStorage.setItem('editPassword', newPass);
+    
+    passwordMessage.textContent = 'パスワードが正常に変更されました！';
+    passwordMessage.style.color = 'green';
+
+    setTimeout(() => {
+        passwordModal.style.display = 'none';
+        passwordMessage.textContent = '';
+        passwordMessage.style.color = 'red';
+    }, 1500);
+});
+
 
 // アプリの起動
 loadInventory();
