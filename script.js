@@ -1,3 +1,7 @@
+// =========================================================
+// === 在庫管理アプリ - 数量管理とパスワード機能追加版 ===
+// =========================================================
+
 // DOM要素の取得
 const itemForm = document.getElementById('item-form');
 const inventoryBody = document.getElementById('inventory-body');
@@ -5,13 +9,17 @@ const searchInput = document.getElementById('search-input');
 const filterButtons = document.querySelectorAll('.filter-buttons button');
 const noItemsMessage = document.getElementById('no-items');
 
-// 初期状態のフィルタ (未/未使用のみ表示)
+// *** 【セキュリティ設定】 ***
+// パスワードを設定します。
+// 閲覧は可能ですが、編集時はこのパスワードが必要です。
+const EDIT_PASSWORD = '123'; // !!! ここを任意の文字列に変更してください !!!
+// **************************
+
 let currentFilter = 'uncompleted'; 
 let inventory = []; // 在庫データを格納する配列
 
 // --- データ操作とローカルストレージ ---
 
-// ローカルストレージからデータを読み込む
 function loadInventory() {
     const storedInventory = localStorage.getItem('inventory');
     if (storedInventory) {
@@ -19,7 +27,6 @@ function loadInventory() {
     }
 }
 
-// ローカルストレージにデータを保存する
 function saveInventory() {
     localStorage.setItem('inventory', JSON.stringify(inventory));
 }
@@ -31,40 +38,52 @@ itemForm.addEventListener('submit', (e) => {
     e.preventDefault();
 
     const name = document.getElementById('name').value.trim();
+    const quantity = parseInt(document.getElementById('quantity').value, 10);
     const expiry = document.getElementById('expiry').value;
     const location = document.getElementById('location').value.trim();
 
-    if (!name) return;
+    if (!name || isNaN(quantity) || quantity < 1) return;
 
-    const newItem = {
-        id: Date.now(), // 一意なIDとしてタイムスタンプを使用
-        name: name,
-        expiry: expiry,
-        location: location,
-        isCompleted: false, // 状態: 未（未使用）
-    };
+    // *** 【数量管理ロジック】: 既存アイテムとの結合を試みる ***
+    // 同じ商品名、同じ賞味期限、かつ未完了のアイテムを探す
+    const existingItemIndex = inventory.findIndex(item => 
+        item.name === name && item.expiry === expiry && !item.isCompleted
+    );
 
-    inventory.push(newItem);
+    if (existingItemIndex !== -1) {
+        // 既存の未完了アイテムが見つかった場合、数量を合算
+        inventory[existingItemIndex].quantity += quantity;
+    } else {
+        // 新しいアイテムとして登録
+        const newItem = {
+            id: Date.now(),
+            name: name,
+            quantity: quantity, // 数量プロパティを追加
+            expiry: expiry,
+            location: location,
+            isCompleted: false,
+        };
+        inventory.push(newItem);
+    }
+    // **********************************************************
+
     saveInventory();
     renderInventory();
     
-    // フォームをリセット
-    itemForm.reset();
+    // フォームをリセット (数量を1に戻す)
+    document.getElementById('quantity').value = 1;
+    document.getElementById('name').value = '';
+    document.getElementById('expiry').value = '';
+    document.getElementById('location').value = '';
 });
 
-// 検索入力時の処理
-searchInput.addEventListener('input', () => {
-    renderInventory();
-});
-
-// フィルタボタンの処理
+// 検索・フィルタボタンの処理
+searchInput.addEventListener('input', () => { renderInventory(); });
 filterButtons.forEach(button => {
     button.addEventListener('click', () => {
-        // アクティブなボタンの切り替え
         filterButtons.forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
 
-        // フィルタ状態の更新
         if (button.id === 'filter-all') {
             currentFilter = 'all';
         } else if (button.id === 'filter-completed') {
@@ -72,7 +91,6 @@ filterButtons.forEach(button => {
         } else {
             currentFilter = 'uncompleted';
         }
-
         renderInventory();
     });
 });
@@ -81,7 +99,16 @@ filterButtons.forEach(button => {
 inventoryBody.addEventListener('click', (e) => {
     const target = e.target;
     if (target.classList.contains('toggle-button') || target.classList.contains('delete-button')) {
-        const id = Number(target.closest('tr').dataset.id); // TRタグからIDを取得
+        
+        // *** 【パスワードチェック】: 編集・削除前にパスワードを求める ***
+        const inputPassword = prompt("編集にはパスワードが必要です。");
+        if (inputPassword !== EDIT_PASSWORD) {
+            alert("wrong password");
+            return;
+        }
+        // ***************************************************************
+        
+        const id = Number(target.closest('tr').dataset.id); 
         
         if (target.classList.contains('toggle-button')) {
             toggleCompletion(id);
@@ -105,8 +132,7 @@ function toggleCompletion(id) {
 
 // アイテムを削除する
 function deleteItem(id) {
-    // 削除確認
-    if (!confirm('このアイテムを削除してもよろしいですか？')) {
+    if (!confirm('削除しますか？')) {
         return;
     }
     inventory = inventory.filter(item => item.id !== id);
@@ -114,21 +140,19 @@ function deleteItem(id) {
     renderInventory();
 }
 
-// 在庫リストを表示する
+// 在庫リストを表示する (ソート、アラート、数量表示ロジックを含む)
 function renderInventory() {
-    inventoryBody.innerHTML = ''; // リストをクリア
+    inventoryBody.innerHTML = ''; 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // 時刻をリセット
+    today.setHours(0, 0, 0, 0); 
 
     // 1. フィルタリングと検索
     let filteredInventory = inventory.filter(item => {
-        // フィルタリング
         const filterMatch = 
             (currentFilter === 'uncompleted' && !item.isCompleted) ||
             (currentFilter === 'completed' && item.isCompleted) ||
             (currentFilter === 'all');
         
-        // 検索 (商品名)
         const searchText = searchInput.value.toLowerCase();
         const searchMatch = !searchText || item.name.toLowerCase().includes(searchText);
 
@@ -137,7 +161,7 @@ function renderInventory() {
     
     // 2. 賞味期限によるソート（期限が近い順）
     filteredInventory.sort((a, b) => {
-        // 賞味期限未設定のアイテムは遠い未来の日付（8640000000000000）としてソート
+        // 賞味期限未設定のアイテムは遠い未来の日付としてソート
         const dateA = a.expiry ? new Date(a.expiry) : new Date(8640000000000000); 
         const dateB = b.expiry ? new Date(b.expiry) : new Date(8640000000000000);
 
@@ -170,7 +194,6 @@ function renderInventory() {
             const expiryDate = new Date(item.expiry);
             expiryDate.setHours(0, 0, 0, 0);
             
-            // 期限までの残り日数 (ミリ秒 / 1日分)
             const diffTime = expiryDate.getTime() - today.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
@@ -183,18 +206,17 @@ function renderInventory() {
             }
         }
         
-        // 済みのアイテムには専用のクラス、未済のアイテムにはアラートクラスを適用
         if (item.isCompleted) {
             row.classList.add('completed-item');
         } else if (alertClass) {
             row.classList.add(alertClass);
         }
 
-        // 'isCompleted'の値に応じてボタンの表示テキストを決定
         const toggleText = item.isCompleted ? '未に戻す' : '済にする';
 
         row.innerHTML = `
             <td>${item.name}</td>
+            <td>${item.quantity}</td> 
             <td>${item.expiry || '未設定'}</td>
             <td>${item.location || '未設定'}</td>
             <td>${item.isCompleted ? '済' : '未'}</td>
