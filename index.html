@@ -9,20 +9,6 @@
 <body>
     <h1>在庫一覧</h1>
 
-    <section id="add-form">
-        <h2>新規登録</h2>
-        <form id="item-form">
-            <input type="text" id="name" placeholder="商品名" required>
-            <input type="number" id="quantity" value="1" min="1" title="数量" style="width: 60px;">
-            
-            <input type="date" id="expiry" title="期限">
-            <input type="text" id="location" placeholder="場所">
-            <button type="submit">登録</button>
-        </form>
-    </section>
-
-    <hr>
-
     <section id="controls">
         <input type="text" id="search-input" placeholder="検索...">
         <div class="filter-buttons">
@@ -30,19 +16,33 @@
             <button id="filter-uncompleted" class="active">未</button>
             <button id="filter-completed">済</button>
         </div>
+        <button id="settings-button" class="action-button">設定</button>
     </section>
 
+    <section id="add-form">
+        <h2>新規登録</h2>
+        <form id="item-form">
+            <input type="text" id="name" placeholder="商品名" required>
+            <input type="number" id="quantity" value="1" min="1" title="数量" style="width: 60px;">
+            <input type="date" id="expiry" title="賞味期限">
+            <input type="text" id="location" placeholder="保管場所">
+            <button type="submit">登録</button>
+        </form>
+    </section>
+
+    <hr>
+    
     <section id="inventory-list">
         <h2>在庫一覧</h2>
         <table>
             <thead>
                 <tr>
-                    <th>商品名</th>
+                    <th>商品</th>
                     <th>数量</th> 
                     <th>期限</th>
                     <th>場所</th>
-                    <th></th>
-                    <th></th>
+                    <th>-</th>
+                    <th>-</th>
                 </tr>
             </thead>
             <tbody id="inventory-body">
@@ -50,6 +50,21 @@
         </table>
         <p id="no-items" style="display: none;">在庫なし</p>
     </section>
+
+    <div id="password-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3>PW設定・変更</h3>
+            <p>※PWは4桁までです。</p>
+            <form id="password-form">
+                <input type="password" id="current-password" placeholder="NOW PW" required>
+                <input type="password" id="new-password" placeholder="NEW PW" required>
+                <input type="password" id="confirm-new-password" placeholder="NEW PW（確認）" required>
+                <button type="submit">変更</button>
+                <p id="password-message" style="color: red;"></p>
+            </form>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
