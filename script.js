@@ -74,7 +74,22 @@ filterButtons.forEach(button => {
         }
 
         renderInventory();
-// ... [get/saveInventory, イベントリスナーなどの既存コードはそのまま] ...
+    });
+});
+
+// リスト内のボタン（状態切り替え、削除）の処理
+inventoryBody.addEventListener('click', (e) => {
+    const target = e.target;
+    if (target.classList.contains('toggle-button') || target.classList.contains('delete-button')) {
+        const id = Number(target.closest('tr').dataset.id); // TRタグからIDを取得
+        
+        if (target.classList.contains('toggle-button')) {
+            toggleCompletion(id);
+        } else if (target.classList.contains('delete-button')) {
+            deleteItem(id);
+        }
+    }
+});
 
 // --- 主要な機能 ---
 
@@ -122,14 +137,16 @@ function renderInventory() {
     
     // 2. 賞味期限によるソート（期限が近い順）
     filteredInventory.sort((a, b) => {
-        const dateA = a.expiry ? new Date(a.expiry) : new Date(8640000000000000); // 未設定は未来の遠い日付
+        // 賞味期限未設定のアイテムは遠い未来の日付（8640000000000000）としてソート
+        const dateA = a.expiry ? new Date(a.expiry) : new Date(8640000000000000); 
         const dateB = b.expiry ? new Date(b.expiry) : new Date(8640000000000000);
 
-        // 済みのものはソート順を下にする
+        // 済みのものはソート順を下にする（リストの最後に表示）
         if (a.isCompleted !== b.isCompleted) {
             return a.isCompleted ? 1 : -1;
         }
-
+        
+        // 日付が早い順（昇順）に並べ替え
         return dateA - dateB;
     });
 
