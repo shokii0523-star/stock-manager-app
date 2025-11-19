@@ -61,31 +61,10 @@ th, td {
 th {
     background-color: #f4f4f4;
 }
-.completed-item td {
-    background-color: #f9f9f9;
-    color: #888;
-    text-decoration: line-through;
-}
 
-/* 操作ボタン */
-.action-button {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 0.9em;
-}
-.toggle-button {
-    background-color: #FFC107; /* 未/済の切り替え */
-}
-.delete-button {
-    background-color: #DC3545;
-    color: white;
-    margin-left: 5px;
-}
 /* --- 賞味期限アラートの色定義 --- */
 
-/* 3日以内（緊急）: 赤色 */
+/* 3日以内・期限切れ（緊急）: 赤色 */
 .alert-expired td {
     background-color: #ffdddd; /* 薄い赤 */
     font-weight: bold;
@@ -107,4 +86,21 @@ th {
     background-color: #f9f9f9 !important; 
     color: #888 !important;
     text-decoration: line-through;
+}
+
+/* 操作ボタン */
+.action-button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+.toggle-button {
+    background-color: #FFC107; /* 未/済の切り替え */
+}
+.delete-button {
+    background-color: #DC3545;
+    color: white;
+    margin-left: 5px;
 }
