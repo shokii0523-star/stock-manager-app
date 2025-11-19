@@ -83,3 +83,28 @@ th {
     color: white;
     margin-left: 5px;
 }
+/* --- 賞味期限アラートの色定義 --- */
+
+/* 3日以内（緊急）: 赤色 */
+.alert-expired td {
+    background-color: #ffdddd; /* 薄い赤 */
+    font-weight: bold;
+    color: #cc0000;
+}
+
+/* 7日以内（注意）: 黄色 */
+.alert-warning td {
+    background-color: #fff9c4; /* 薄い黄色 */
+}
+
+/* 期限まで余裕あり（安全）: 緑色 */
+.alert-safe td {
+    background-color: #e8f5e9; /* 薄い緑 */
+}
+
+/* 使用済みのアイテムは、アラートの色分けを上書きして薄い灰色に戻す */
+.completed-item td {
+    background-color: #f9f9f9 !important; 
+    color: #888 !important;
+    text-decoration: line-through;
+}
