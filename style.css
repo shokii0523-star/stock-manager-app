@@ -7,7 +7,9 @@ body {
 
 /* フォーム */
 #item-form input[type="text"], 
-#item-form input[type="date"] {
+#item-form input[type="date"],
+/* 数量入力欄のスタイルを追加 */
+#item-form input[type="number"] {
     padding: 8px;
     margin-right: 10px;
     border: 1px solid #ccc;
