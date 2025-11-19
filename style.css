@@ -8,7 +8,6 @@ body {
 /* フォーム */
 #item-form input[type="text"], 
 #item-form input[type="date"],
-/* 数量入力欄のスタイルを追加 */
 #item-form input[type="number"] {
     padding: 8px;
     margin-right: 10px;
@@ -24,18 +23,25 @@ body {
     cursor: pointer;
 }
 
-/* 検索とフィルタリング */
+/* 検索とフィルタリング/設定エリア */
 #controls {
+    /* Flexを使い、要素を左右に配置 */
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
 }
+
 #search-input {
     padding: 10px;
-    width: 50%;
+    width: 30%; /* 幅を調整 */
     border: 1px solid #ddd;
     border-radius: 4px;
+}
+.filter-buttons {
+    /* フィルタボタンのグループ */
+    display: inline-flex;
+    margin-right: 10px;
 }
 .filter-buttons button {
     padding: 8px 12px;
@@ -66,24 +72,20 @@ th {
 
 /* --- 賞味期限アラートの色定義 --- */
 
-/* 3日以内・期限切れ（緊急）: 赤色 */
 .alert-expired td {
-    background-color: #ffdddd; /* 薄い赤 */
+    background-color: #ffdddd; 
     font-weight: bold;
     color: #cc0000;
 }
 
-/* 7日以内（注意）: 黄色 */
 .alert-warning td {
-    background-color: #fff9c4; /* 薄い黄色 */
+    background-color: #fff9c4; 
 }
 
-/* 期限まで余裕あり（安全）: 緑色 */
 .alert-safe td {
-    background-color: #e8f5e9; /* 薄い緑 */
+    background-color: #e8f5e9; 
 }
 
-/* 使用済みのアイテムは、アラートの色分けを上書きして薄い灰色に戻す */
 .completed-item td {
     background-color: #f9f9f9 !important; 
     color: #888 !important;
@@ -92,17 +94,76 @@ th {
 
 /* 操作ボタン */
 .action-button {
-    padding: 5px 10px;
+    padding: 8px 15px;
     border: none;
-    border-radius: 3px;
+    border-radius: 4px;
     cursor: pointer;
     font-size: 0.9em;
 }
+#settings-button {
+    background-color: #6c757d; /* 設定ボタンの色 */
+    color: white;
+    font-size: 1em;
+}
 .toggle-button {
-    background-color: #FFC107; /* 未/済の切り替え */
+    background-color: #FFC107; 
 }
 .delete-button {
     background-color: #DC3545;
     color: white;
     margin-left: 5px;
+}
+
+/* --- モーダル (パスワード設定画面) --- */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.4); /* 背景を黒く透過 */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 画面中央に配置 */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; 
+    max-width: 400px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#password-form input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+#password-form button {
+    background-color: #007BFF;
+    color: white;
+    margin-top: 10px;
 }
