@@ -3,29 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>在庫管理</title>
+    <title>在庫一覧</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>在庫一覧</h1>
 
     <section id="controls">
-        <input type="text" id="search-input" placeholder="検索...">
+        <input type="text" id="search-input" placeholder="商品名検索...">
         <div class="filter-buttons">
-            <button id="filter-all">全て表示</button>
-            <button id="filter-uncompleted" class="active">未</button>
-            <button id="filter-completed">済</button>
+            <button id="filter-uncompleted" class="active">在庫</button>
+            <button id="filter-completed">履歴</button>
         </div>
-        <button id="settings-button" class="action-button">設定</button>
+        <button id="settings-button" class="action-button">パスワード</button>
     </section>
 
     <section id="add-form">
         <h2>新規登録</h2>
         <form id="item-form">
-            <input type="text" id="name" placeholder="商品名" required>
+            <input type="text" id="name" placeholder="商品" required>
             <input type="number" id="quantity" value="1" min="1" title="数量" style="width: 60px;">
-            <input type="date" id="expiry" title="賞味期限">
-            <input type="text" id="location" placeholder="保管場所">
+            <input type="date" id="expiry" title="期限">
+            <input type="text" id="location" placeholder="場所">
             <button type="submit">登録</button>
         </form>
     </section>
@@ -33,34 +32,32 @@
     <hr>
     
     <section id="inventory-list">
-        <h2>在庫一覧</h2>
+        <h2 id="list-title">未完了在庫一覧</h2>
         <table>
             <thead>
                 <tr>
                     <th>商品</th>
-                    <th>数量</th> 
+                    <th>数</th> 
                     <th>期限</th>
                     <th>場所</th>
-                    <th>-</th>
-                    <th>-</th>
-                </tr>
+                    <th>-</th> <th>-</th> </tr>
             </thead>
             <tbody id="inventory-body">
                 </tbody>
         </table>
-        <p id="no-items" style="display: none;">在庫なし</p>
+        <p id="no-items" style="display: none;">在庫がありません。</p>
     </section>
 
     <div id="password-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <span class="close-button">&times;</span>
-            <h3>PW設定・変更</h3>
-            <p>※PWは4桁までです。</p>
+            <h3>パスワード設定・変更</h3>
+            <p>※パスワードは**4桁の数字**を推奨します。</p>
             <form id="password-form">
-                <input type="password" id="current-password" placeholder="NOW PW" required>
-                <input type="password" id="new-password" placeholder="NEW PW" required>
-                <input type="password" id="confirm-new-password" placeholder="NEW PW（確認）" required>
-                <button type="submit">変更</button>
+                <input type="password" id="current-password" placeholder="現在のパスワード" required>
+                <input type="password" id="new-password" placeholder="新しいパスワード" required>
+                <input type="password" id="confirm-new-password" placeholder="新しいパスワード（確認）" required>
+                <button type="submit">パスワードを変更</button>
                 <p id="password-message" style="color: red;"></p>
             </form>
         </div>
