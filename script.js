@@ -1,5 +1,5 @@
 // =========================================================
-// === 在庫管理アプリ - 数量管理とパスワード機能追加版 ===
+// === 在庫管理アプリ - 数量・パスワード設定機能追加版 ===
 // =========================================================
 
 // DOM要素の取得
@@ -8,14 +8,24 @@ const inventoryBody = document.getElementById('inventory-body');
 const searchInput = document.getElementById('search-input');
 const filterButtons = document.querySelectorAll('.filter-buttons button');
 const noItemsMessage = document.getElementById('no-items');
+const settingsButton = document.getElementById('settings-button');
+const passwordModal = document.getElementById('password-modal');
+const closeButton = document.querySelector('.close-button');
+const passwordForm = document.getElementById('password-form');
+const passwordMessage = document.getElementById('password-message');
 
-// *** 【セキュリティ設定】 ***
-// パスワードを設定します。
-// 閲覧は可能ですが、編集時はこのパスワードが必要です。
-const EDIT_PASSWORD = '123'; // !!! ここを任意の文字列に変更してください !!!
-// **************************
-
-let currentFilter = 'uncompleted'; 
+// *** 【セキュリティ設定と初期化】 ***
+// パスワードをローカルストレージから読み込む。存在しない場合は初期値 '0000' を設定。
+function getPassword() {
+    const storedPassword = localStorage.getItem('editPassword');
+    // 初期PW '0000'
+    if (!storedPassword) {
+        localStorage.setItem('editPassword', '0000');
+        return '0000';
+    }
+    return storedPassword;
+}
+let currentEditPassword = getPassword();
 let inventory = []; // 在庫データを格納する配列
 
 // --- データ操作とローカルストレージ ---
@@ -33,7 +43,7 @@ function saveInventory() {
 
 // --- イベントリスナー ---
 
-// アイテム登録フォームの送信処理
+// アイテム登録フォームの送信処理 (変更なし)
 itemForm.addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -44,8 +54,7 @@ itemForm.addEventListener('submit', (e) => {
 
     if (!name || isNaN(quantity) || quantity < 1) return;
 
-    // *** 【数量管理ロジック】: 既存アイテムとの結合を試みる ***
-    // 同じ商品名、同じ賞味期限、かつ未完了のアイテムを探す
+    // 既存アイテムとの結合を試みる
     const existingItemIndex = inventory.findIndex(item => 
         item.name === name && item.expiry === expiry && !item.isCompleted
     );
@@ -58,26 +67,25 @@ itemForm.addEventListener('submit', (e) => {
         const newItem = {
             id: Date.now(),
             name: name,
-            quantity: quantity, // 数量プロパティを追加
+            quantity: quantity,
             expiry: expiry,
             location: location,
             isCompleted: false,
         };
         inventory.push(newItem);
     }
-    // **********************************************************
 
     saveInventory();
     renderInventory();
     
-    // フォームをリセット (数量を1に戻す)
+    // フォームをリセット
     document.getElementById('quantity').value = 1;
     document.getElementById('name').value = '';
     document.getElementById('expiry').value = '';
     document.getElementById('location').value = '';
 });
 
-// 検索・フィルタボタンの処理
+// 検索・フィルタボタンの処理 (変更なし)
 searchInput.addEventListener('input', () => { renderInventory(); });
 filterButtons.forEach(button => {
     button.addEventListener('click', () => {
@@ -101,9 +109,9 @@ inventoryBody.addEventListener('click', (e) => {
     if (target.classList.contains('toggle-button') || target.classList.contains('delete-button')) {
         
         // *** 【パスワードチェック】: 編集・削除前にパスワードを求める ***
-        const inputPassword = prompt("編集にはパスワードが必要です。");
-        if (inputPassword !== EDIT_PASSWORD) {
-            alert("wrong password");
+        const inputPassword = prompt("編集時はPWが必要です。");
+        if (inputPassword !== currentEditPassword) {
+            alert("wrong PW");
             return;
         }
         // ***************************************************************
@@ -118,9 +126,67 @@ inventoryBody.addEventListener('click', (e) => {
     }
 });
 
-// --- 主要な機能 ---
+// *** 【設定ボタンとモーダルの処理】 ***
 
-// 済/未の状態を切り替える
+// 1. 設定ボタンを押したらモーダルを表示
+settingsButton.addEventListener('click', () => {
+    passwordModal.style.display = 'block';
+    passwordMessage.textContent = ''; // メッセージをクリア
+    passwordForm.reset();
+});
+
+// 2. 閉じるボタン (x) を押したらモーダルを非表示
+closeButton.addEventListener('click', () => {
+    passwordModal.style.display = 'none';
+});
+
+// 3. モーダル外をクリックしたらモーダルを非表示
+window.addEventListener('click', (event) => {
+    if (event.target === passwordModal) {
+        passwordModal.style.display = 'none';
+    }
+});
+
+// 4. パスワード変更フォームの送信処理
+passwordForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const currentPass = document.getElementById('current-password').value;
+    const newPass = document.getElementById('new-password').value;
+    const confirmPass = document.getElementById('confirm-new-password').value;
+
+    if (currentPass !== currentEditPassword) {
+        passwordMessage.textContent = 'エラー: worng PW';
+        return;
+    }
+
+    if (newPass !== confirmPass) {
+        passwordMessage.textContent = 'エラー: worng PW';
+        return;
+    }
+    
+    if (newPass.length < 4) {
+        passwordMessage.textContent = 'エラー: PWは4文字までです';
+        return;
+    }
+
+    // パスワードの更新
+    currentEditPassword = newPass;
+    localStorage.setItem('editPassword', newPass);
+    
+    passwordMessage.textContent = '変更完了';
+    passwordMessage.style.color = 'green';
+
+    // 成功後、フォームをクリアしモーダルを閉じる (UXのため数秒後に閉じる)
+    setTimeout(() => {
+        passwordModal.style.display = 'none';
+        passwordMessage.textContent = '';
+        passwordMessage.style.color = 'red';
+    }, 1500);
+});
+
+// --- 在庫リストの表示ロジック (変更なし) ---
+
 function toggleCompletion(id) {
     const itemIndex = inventory.findIndex(item => item.id === id);
     if (itemIndex !== -1) {
@@ -130,7 +196,6 @@ function toggleCompletion(id) {
     }
 }
 
-// アイテムを削除する
 function deleteItem(id) {
     if (!confirm('削除しますか？')) {
         return;
@@ -140,13 +205,11 @@ function deleteItem(id) {
     renderInventory();
 }
 
-// 在庫リストを表示する (ソート、アラート、数量表示ロジックを含む)
 function renderInventory() {
     inventoryBody.innerHTML = ''; 
     const today = new Date();
     today.setHours(0, 0, 0, 0); 
 
-    // 1. フィルタリングと検索
     let filteredInventory = inventory.filter(item => {
         const filterMatch = 
             (currentFilter === 'uncompleted' && !item.isCompleted) ||
@@ -159,22 +222,17 @@ function renderInventory() {
         return filterMatch && searchMatch;
     });
     
-    // 2. 賞味期限によるソート（期限が近い順）
     filteredInventory.sort((a, b) => {
-        // 賞味期限未設定のアイテムは遠い未来の日付としてソート
         const dateA = a.expiry ? new Date(a.expiry) : new Date(8640000000000000); 
         const dateB = b.expiry ? new Date(b.expiry) : new Date(8640000000000000);
 
-        // 済みのものはソート順を下にする（リストの最後に表示）
         if (a.isCompleted !== b.isCompleted) {
             return a.isCompleted ? 1 : -1;
         }
         
-        // 日付が早い順（昇順）に並べ替え
         return dateA - dateB;
     });
 
-    // 3. 表示件数の確認
     if (filteredInventory.length === 0) {
         inventoryBody.innerHTML = '';
         noItemsMessage.style.display = 'block';
@@ -183,12 +241,10 @@ function renderInventory() {
         noItemsMessage.style.display = 'none';
     }
 
-    // 4. テーブル行の生成とアラートクラスの適用
     filteredInventory.forEach(item => {
         const row = document.createElement('tr');
         row.dataset.id = item.id;
         
-        // --- アラートロジックの適用 ---
         let alertClass = '';
         if (item.expiry && !item.isCompleted) {
             const expiryDate = new Date(item.expiry);
@@ -198,11 +254,11 @@ function renderInventory() {
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
             if (diffDays <= 3) {
-                alertClass = 'alert-expired'; // 3日以内・期限切れ: 赤
+                alertClass = 'alert-expired'; 
             } else if (diffDays <= 7) {
-                alertClass = 'alert-warning'; // 7日以内: 黄色
+                alertClass = 'alert-warning'; 
             } else {
-                alertClass = 'alert-safe'; // 7日より先: 緑
+                alertClass = 'alert-safe'; 
             }
         }
         
@@ -212,13 +268,13 @@ function renderInventory() {
             row.classList.add(alertClass);
         }
 
-        const toggleText = item.isCompleted ? '未に戻す' : '済にする';
+        const toggleText = item.isCompleted ? '戻す' : '済';
 
         row.innerHTML = `
             <td>${item.name}</td>
             <td>${item.quantity}</td> 
-            <td>${item.expiry || '未設定'}</td>
-            <td>${item.location || '未設定'}</td>
+            <td>${item.expiry || '-'}</td>
+            <td>${item.location || '-'}</td>
             <td>${item.isCompleted ? '済' : '未'}</td>
             <td>
                 <button class="action-button toggle-button">${toggleText}</button>
