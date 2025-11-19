@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>シンプル在庫管理アプリ</title>
+    <title>在庫管理</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>在庫管理リスト 🍎</h1>
+    <h1>在庫一覧</h1>
 
     <section id="add-form">
-        <h2>新規アイテム登録</h2>
+        <h2>新規登録</h2>
         <form id="item-form">
-            <input type="text" id="name" placeholder="商品名 (例: 牛乳)" required>
-            <input type="date" id="expiry" title="賞味期限">
-            <input type="text" id="location" placeholder="保管場所 (例: 冷蔵庫)">
+            <input type="text" id="name" placeholder="商品名" required>
+            <input type="number" id="quantity" value="1" min="1" title="数量" style="width: 60px;">
+            
+            <input type="date" id="expiry" title="期限">
+            <input type="text" id="location" placeholder="場所">
             <button type="submit">登録</button>
         </form>
     </section>
@@ -22,30 +24,31 @@
     <hr>
 
     <section id="controls">
-        <input type="text" id="search-input" placeholder="商品名検索...">
+        <input type="text" id="search-input" placeholder="検索...">
         <div class="filter-buttons">
             <button id="filter-all">全て表示</button>
-            <button id="filter-uncompleted" class="active">未（未使用）</button>
-            <button id="filter-completed">済（使用済み）</button>
+            <button id="filter-uncompleted" class="active">未</button>
+            <button id="filter-completed">済</button>
         </div>
     </section>
 
     <section id="inventory-list">
-        <h2>在庫アイテム一覧</h2>
+        <h2>在庫一覧</h2>
         <table>
             <thead>
                 <tr>
                     <th>商品名</th>
-                    <th>賞味期限</th>
-                    <th>保管場所</th>
-                    <th>状態</th>
-                    <th>操作</th>
+                    <th>数量</th> 
+                    <th>期限</th>
+                    <th>場所</th>
+                    <th></th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="inventory-body">
                 </tbody>
         </table>
-        <p id="no-items" style="display: none;">在庫がありません。</p>
+        <p id="no-items" style="display: none;">在庫なし</p>
     </section>
 
     <script src="script.js"></script>
