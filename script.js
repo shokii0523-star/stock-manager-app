@@ -74,22 +74,7 @@ filterButtons.forEach(button => {
         }
 
         renderInventory();
-    });
-});
-
-// リスト内のボタン（状態切り替え、削除）の処理
-inventoryBody.addEventListener('click', (e) => {
-    const target = e.target;
-    if (target.classList.contains('toggle-button') || target.classList.contains('delete-button')) {
-        const id = Number(target.closest('tr').dataset.id); // TRタグからIDを取得
-        
-        if (target.classList.contains('toggle-button')) {
-            toggleCompletion(id);
-        } else if (target.classList.contains('delete-button')) {
-            deleteItem(id);
-        }
-    }
-});
+// ... [get/saveInventory, イベントリスナーなどの既存コードはそのまま] ...
 
 // --- 主要な機能 ---
 
@@ -117,22 +102,37 @@ function deleteItem(id) {
 // 在庫リストを表示する
 function renderInventory() {
     inventoryBody.innerHTML = ''; // リストをクリア
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 時刻をリセット
 
-    // 1. フィルタリング
+    // 1. フィルタリングと検索
     let filteredInventory = inventory.filter(item => {
-        if (currentFilter === 'uncompleted') return !item.isCompleted;
-        if (currentFilter === 'completed') return item.isCompleted;
-        return true; // all
+        // フィルタリング
+        const filterMatch = 
+            (currentFilter === 'uncompleted' && !item.isCompleted) ||
+            (currentFilter === 'completed' && item.isCompleted) ||
+            (currentFilter === 'all');
+        
+        // 検索 (商品名)
+        const searchText = searchInput.value.toLowerCase();
+        const searchMatch = !searchText || item.name.toLowerCase().includes(searchText);
+
+        return filterMatch && searchMatch;
+    });
+    
+    // 2. 賞味期限によるソート（期限が近い順）
+    filteredInventory.sort((a, b) => {
+        const dateA = a.expiry ? new Date(a.expiry) : new Date(8640000000000000); // 未設定は未来の遠い日付
+        const dateB = b.expiry ? new Date(b.expiry) : new Date(8640000000000000);
+
+        // 済みのものはソート順を下にする
+        if (a.isCompleted !== b.isCompleted) {
+            return a.isCompleted ? 1 : -1;
+        }
+
+        return dateA - dateB;
     });
 
-    // 2. 検索 (商品名)
-    const searchText = searchInput.value.toLowerCase();
-    if (searchText) {
-        filteredInventory = filteredInventory.filter(item => 
-            item.name.toLowerCase().includes(searchText)
-        );
-    }
-    
     // 3. 表示件数の確認
     if (filteredInventory.length === 0) {
         inventoryBody.innerHTML = '';
@@ -142,12 +142,35 @@ function renderInventory() {
         noItemsMessage.style.display = 'none';
     }
 
-    // 4. テーブル行の生成
+    // 4. テーブル行の生成とアラートクラスの適用
     filteredInventory.forEach(item => {
         const row = document.createElement('tr');
         row.dataset.id = item.id;
+        
+        // --- アラートロジックの適用 ---
+        let alertClass = '';
+        if (item.expiry && !item.isCompleted) {
+            const expiryDate = new Date(item.expiry);
+            expiryDate.setHours(0, 0, 0, 0);
+            
+            // 期限までの残り日数 (ミリ秒 / 1日分)
+            const diffTime = expiryDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays <= 3) {
+                alertClass = 'alert-expired'; // 3日以内・期限切れ: 赤
+            } else if (diffDays <= 7) {
+                alertClass = 'alert-warning'; // 7日以内: 黄色
+            } else {
+                alertClass = 'alert-safe'; // 7日より先: 緑
+            }
+        }
+        
+        // 済みのアイテムには専用のクラス、未済のアイテムにはアラートクラスを適用
         if (item.isCompleted) {
             row.classList.add('completed-item');
+        } else if (alertClass) {
+            row.classList.add(alertClass);
         }
 
         // 'isCompleted'の値に応じてボタンの表示テキストを決定
